@@ -50,7 +50,10 @@ namespace AutoScroll
 
         private void ButtonScan_Click(object sender, RoutedEventArgs e)
         {
-
+            if (scoreListBox.SelectedItems.Count > 0)
+            {
+                new Player((Score)scoreListBox.SelectedItems[0]).Show();
+            }
         }
 
         private void ButtonDelete_Click(object sender, RoutedEventArgs e)

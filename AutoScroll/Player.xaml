@@ -1,0 +1,33 @@
+﻿<Window x:Class="AutoScroll.Player"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AutoScroll"
+        mc:Ignorable="d"
+        Loaded="WindowLoaded"
+        Title="Player" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="12">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Height="32" Name="TextBoxTime" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Stop" Click="ButtonStop_Click"/>
+            <Button Grid.Column="2" Content="Pause" Click="ButtonPause_Click"/>
+            <Button Grid.Column="3" Content="Play" Click="ButtonPlay_Click"/>
+        </Grid>
+        <Border Name="mainContainer" Grid.Row="1" Margin="12" Width="auto" BorderBrush="Black" BorderThickness="1"/>
+    </Grid>
+</Window>
