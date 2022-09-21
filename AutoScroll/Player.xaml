@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:AutoScroll"
         mc:Ignorable="d"
         Loaded="WindowLoaded"
+        KeyUp="OnKeyUp"
         Title="Player" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
@@ -28,6 +29,6 @@
             <Button Grid.Column="2" Content="Pause" Click="ButtonPause_Click"/>
             <Button Grid.Column="3" Content="Play" Click="ButtonPlay_Click"/>
         </Grid>
-        <Border Name="mainContainer" Grid.Row="1" Margin="12" Width="auto" BorderBrush="Black" BorderThickness="1"/>
+        <Border Name="mainContainer" Focusable="true" Grid.Row="1" Margin="12" Width="auto" BorderBrush="Black" BorderThickness="1"/>
     </Grid>
 </Window>

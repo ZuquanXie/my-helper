@@ -20,19 +20,21 @@ namespace AutoScroll
     /// </summary>
     public partial class Player : Window
     {
-        private DrawingGroup drawingGroup = new DrawingGroup();
+        private readonly DrawingGroup drawingGroup = new DrawingGroup();
 
-        private DoubleAnimation animation = new DoubleAnimation();
+        private readonly DoubleAnimation animation = new DoubleAnimation();
 
-        private Storyboard storyboard = new Storyboard();
+        private readonly Storyboard storyboard = new Storyboard();
 
-        private Rectangle rectangle = new Rectangle();
+        private readonly Rectangle rectangle = new Rectangle();
 
-        private Score score;
+        private readonly Score score;
 
         private int PixelWidthTotal = 0;
 
         private int PixelHeightTotal = 0;
+
+        private bool playing = false;
 
         private bool paused = false;
 
@@ -87,15 +89,20 @@ namespace AutoScroll
             rectangle.Stretch = Stretch.Fill;
             rectangle.RenderTransform = translate;
 
-            animation.Duration = new Duration(TimeSpan.FromSeconds(60));
             animation.AutoReverse = false;
             animation.From = 0;
 
             Storyboard.SetTargetName(animation, "theTranslate");
             Storyboard.SetTargetProperty(animation, new PropertyPath(TranslateTransform.YProperty));
             storyboard.Children.Add(animation);
+            storyboard.Completed += AnimationCompleted;
 
             mainContainer.Child = canvas;
+        }
+
+        private void AnimationCompleted(object sender, EventArgs e)
+        {
+            playing = false;
         }
 
         private int GetDisplayWidthTotal()
@@ -118,19 +125,7 @@ namespace AutoScroll
             return -(GetDisplayHeightTotal() - (int)mainContainer.ActualHeight);
         }
 
-        private void ButtonPause_Click(object sender, RoutedEventArgs e)
-        {
-            storyboard.Pause(this);
-            paused = true;
-        }
-
-        private void ButtonStop_Click(object sender, RoutedEventArgs e)
-        {
-            storyboard.Stop(this);
-            paused = false;
-        }
-
-        private void ButtonPlay_Click(object sender, RoutedEventArgs e)
+        private void Play()
         {
             int.TryParse(TextBoxTime.Text, out int seconds);
             if (seconds <= 0)
@@ -138,17 +133,93 @@ namespace AutoScroll
                 MessageBox.Show("Time Error");
                 return;
             }
+            rectangle.Width = GetDisplayWidthTotal();
+            rectangle.Height = GetDisplayHeightTotal();
+            animation.Duration = new Duration(TimeSpan.FromSeconds(seconds));
+            animation.To = GetAnimationLength();
+            storyboard.Begin(this, true);
+            playing = true;
+            paused = false;
+        }
+
+        private void Pause()
+        {
+            if (playing)
+            {
+                storyboard.Pause(this);
+                paused = true;
+            }
+        }
+
+        private void Resume()
+        {
+            storyboard.Resume(this);
+            paused = false;
+        }
+
+        private void Stop()
+        {
+            storyboard.Stop(this);
+            playing = false;
+            paused = false;
+        }
+
+        private void ButtonPause_Click(object sender, RoutedEventArgs e)
+        {
+            Pause();
+            mainContainer.Focus();
+        }
+
+        private void ButtonStop_Click(object sender, RoutedEventArgs e)
+        {
+            Stop();
+            mainContainer.Focus();
+        }
+
+        private void ButtonPlay_Click(object sender, RoutedEventArgs e)
+        {
             if (paused)
             {
-                storyboard.Resume(this);
+                Resume();
             } else
             {
-                rectangle.Width = GetDisplayWidthTotal();
-                rectangle.Height = GetDisplayHeightTotal();
-                animation.Duration = new Duration(TimeSpan.FromSeconds(seconds));
-                animation.To = GetAnimationLength();
-                storyboard.Begin(this, true);
-                paused = false;
+                Play();
+            }
+            mainContainer.Focus();
+        }
+
+        private void OnKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.OriginalSource is TextBox)
+            {
+                if (e.Key == Key.Enter)
+                {
+                    mainContainer.Focus();
+                }
+                return;
+            }
+            /// Space
+            if (e.Key == Key.Space)
+            {
+                if (paused)
+                {
+                    Resume();
+                } else
+                {
+                    if (playing)
+                    {
+                        Pause();
+                    } else
+                    {
+                        Play();
+                    }
+                }
+                return;
+            }
+            /// Backspace
+            if (e.Key== Key.Back)
+            {
+                Stop();
             }
         }
     }
