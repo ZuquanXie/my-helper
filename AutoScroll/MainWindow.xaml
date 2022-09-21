@@ -28,6 +28,7 @@
         <Grid.RowDefinitions>
             <RowDefinition />
             <RowDefinition />
+            <RowDefinition />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -45,6 +46,18 @@
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
+                <ColumnDefinition Width="60"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Name="textBoxDirectory"/>
+            <Button Grid.Column="1" Width="48" Margin="12 0 0 0" Content="..." Click="ButtonDirectory_Click"/>
+        </Grid>
+        <Grid Grid.Row="2" Margin="0 12 0 0" Height="48">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
@@ -52,7 +65,8 @@
             <Button Grid.Column="0" Content="Delete" Click="ButtonDelete_Click"/>
             <Button Grid.Column="1" Margin="12 0 0 0" Content="Add" Click="ButtonAdd_Click"/>
             <Button Grid.Column="2" Margin="12 0 0 0" Content="Edit" Click="ButtonEdit_Click"/>
-            <Button Grid.Column="3" Margin="12 0 0 0" Content="Scan" Click="ButtonScan_Click"/>
+            <Button Grid.Column="3" Margin="12 0 0 0" Content="Save" Click="ButtonSave_Click"/>
+            <Button Grid.Column="4" Margin="12 0 0 0" Content="Scan" Click="ButtonScan_Click"/>
         </Grid>
     </Grid>
 </Window>

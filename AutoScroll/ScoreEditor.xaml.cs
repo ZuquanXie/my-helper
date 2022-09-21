@@ -22,16 +22,19 @@ namespace AutoScroll
     /// </summary>
     public partial class ScoreEditor : Window
     {
+        private string scoreDirectory;
         private Score scoreData = new Score();
         private ArrayList localFiles = new ArrayList();
         private ObservableCollection<FileInfo> selectedFiles = new ObservableCollection<FileInfo>();
-        public ScoreEditor()
+        public ScoreEditor(string scoreDirectory)
         {
             InitializeComponent();
+            this.scoreDirectory = scoreDirectory;
         }
 
-        public ScoreEditor(Score data)
+        public ScoreEditor(string scoreDirectory, Score data)
         {
+            this.scoreDirectory = scoreDirectory;
             scoreData.Name = data.Name;
             scoreData.BPM = data.BPM;
             scoreData.Description = data.Description;
@@ -52,8 +55,12 @@ namespace AutoScroll
 
         private void GetScoreFiles()
         {
+            if (!Directory.Exists(scoreDirectory))
+            {
+                return;
+            }
             localFiles = new ArrayList();
-            var files = Directory.GetFiles(Directory.GetCurrentDirectory() + "\\scoreFiles");
+            var files = Directory.GetFiles(scoreDirectory);
             foreach (var path in files)
             {
                 localFiles.Add(new FileInfo(path));
