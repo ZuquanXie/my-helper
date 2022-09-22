@@ -82,7 +82,7 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Row="0" Text="{Binding Path=FullName}" VerticalAlignment="Center"/>
-            <Image Grid.Row="1" Source="{Binding Path=FullName}" Stretch="UniformToFill"/>
+            <Image Grid.Row="1" Source="{Binding Path=FullName}" Stretch="Uniform"/>
         </Grid>
     </DockPanel>
 </Window>

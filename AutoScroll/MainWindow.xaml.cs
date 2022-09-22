@@ -24,6 +24,7 @@ namespace AutoScroll
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly string saveDataFileName = "savedata.xml";
         public MainWindow()
         {
             InitializeComponent();
@@ -38,7 +39,7 @@ namespace AutoScroll
         {
             XmlSerializer serializer = new XmlSerializer(typeof(SaveData));
             SaveData saveData = new SaveData();
-            TextWriter writer = new StreamWriter("savedata.xml");
+            TextWriter writer = new StreamWriter(saveDataFileName);
 
             saveData.ScoreCount = list.Count;
             saveData.ScoreResourceDirectory = directory;
@@ -52,11 +53,15 @@ namespace AutoScroll
 
         private void LoadFromFile()
         {
+            if (!File.Exists(saveDataFileName))
+            {
+                return;
+            }
             XmlSerializer serializer = new XmlSerializer(typeof(SaveData));
-            serializer.UnknownNode += serializerUnknownNode;
-            serializer.UnknownAttribute += serializerUnknownAttribute;
+            serializer.UnknownNode += SerializerUnknownNode;
+            serializer.UnknownAttribute += SerializerUnknownAttribute;
 
-            FileStream fs = new FileStream("savedata.xml", FileMode.Open);
+            FileStream fs = new FileStream(saveDataFileName, FileMode.Open);
 
             SaveData saveData = (SaveData)serializer.Deserialize(fs);
             Scores scores = (Scores)(Application.Current.Resources["ScoresData"] as ObjectDataProvider)?.Data;
@@ -67,12 +72,12 @@ namespace AutoScroll
             textBoxDirectory.Text = saveData.ScoreResourceDirectory;
         }
 
-        protected void serializerUnknownNode(object sender, XmlNodeEventArgs e)
+        protected void SerializerUnknownNode(object sender, XmlNodeEventArgs e)
         {
             Console.WriteLine("UnknownXMLNode: " + e.Name + " - " + e.Text);
         }
         
-        protected void serializerUnknownAttribute(object sender, XmlAttributeEventArgs e)
+        protected void SerializerUnknownAttribute(object sender, XmlAttributeEventArgs e)
         {
             Console.WriteLine("UnknownXMLAttribute: " + e.Attr.Name + " - " + e.Attr.Value);
         }

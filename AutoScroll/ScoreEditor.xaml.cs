@@ -60,10 +60,14 @@ namespace AutoScroll
                 return;
             }
             localFiles = new ArrayList();
-            var files = Directory.GetFiles(scoreDirectory);
+            var files = Directory.GetFiles(scoreDirectory, "*.*");
+            var search = new System.Text.RegularExpressions.Regex(@"\.(png|jpg|gif|jpeg)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             foreach (var path in files)
             {
-                localFiles.Add(new FileInfo(path));
+                if (search.IsMatch(path))
+                {
+                    localFiles.Add(new FileInfo(path));
+                }
             }
         }
 
