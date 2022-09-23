@@ -76,6 +76,9 @@
     </Compile>
     <Compile Include="SaveData.cs" />
     <Compile Include="Score.cs" />
+    <Compile Include="ScoreCutter.xaml.cs">
+      <DependentUpon>ScoreCutter.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ScoreEditor.xaml.cs">
       <DependentUpon>ScoreEditor.xaml</DependentUpon>
     </Compile>
@@ -93,6 +96,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Player.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ScoreCutter.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

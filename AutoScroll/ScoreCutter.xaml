@@ -1,0 +1,45 @@
+﻿<Window x:Class="AutoScroll.ScoreCutter"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AutoScroll"
+        mc:Ignorable="d"
+        Loaded="WindowLoaded"
+        Title="ScoreCutter" Height="1000" Width="1000">
+    <Grid Height="1000">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32"/>
+            <RowDefinition Height="768"/>
+            <RowDefinition Height="200"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <StackPanel.Children>
+
+                <TextBlock Text="H:"/>
+                <TextBox Width="48" Name="theBarHeight"/>
+
+                <TextBlock Text="CW:"/>
+                <TextBox Width="48" Name="theCursorWidth"/>
+
+                <TextBlock Text="CH:"/>
+                <TextBox Width="48" Name="theCursorHeight"/>
+
+                <Button Content="Cut" Click="ButtonCut_Click"/>
+            </StackPanel.Children>
+        </StackPanel>
+        <Canvas Grid.Row="1" Width="1000" Height="768" Name="theCanvas" ClipToBounds="True" MouseMove="Content_MouseMove" MouseUp="Content_MouseUp">
+            <Rectangle Name="theImage"/>
+            <Rectangle Name="theCursor" Stroke="Black" StrokeThickness="1"/>
+            <Rectangle Name="theCutArea" Stroke="Gray" StrokeThickness="1"/>
+        </Canvas>
+        <Border Grid.Row="2" Height="200" BorderBrush="Black" BorderThickness="1">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <StackPanel Orientation="Horizontal" Name="thePreview" Background="DimGray"></StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

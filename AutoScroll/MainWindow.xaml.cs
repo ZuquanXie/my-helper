@@ -90,12 +90,15 @@ namespace AutoScroll
 
         private void ButtonEdit_Click(object sender, RoutedEventArgs e)
         {
+            /*
             if (scoreListBox.SelectedItems.Count > 0)
             {
                 Score score = (Score)scoreListBox.SelectedItems[0];
                 var editor = new ScoreEditor(textBoxDirectory.Text, score);
                 editor.Show();
             }
+            */
+            new ScoreCutter().Show();
         }
 
         private void ButtonScan_Click(object sender, RoutedEventArgs e)

@@ -158,5 +158,15 @@ namespace AutoScroll
                 }
             }
         }
+
+        private void ButtonCut_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedFiles.Count == 0)
+            {
+                return;
+            }
+            var cutter = new ScoreCutter(selectedFiles[0].FullName);
+            cutter.ShowDialog();
+        }
     }
 }
