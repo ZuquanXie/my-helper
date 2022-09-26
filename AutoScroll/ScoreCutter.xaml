@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:AutoScroll"
         mc:Ignorable="d"
         Loaded="WindowLoaded"
+        MouseLeave="WindowMouseLeave"
         Title="ScoreCutter" Height="1000" Width="1000">
     <Grid Height="1000">
         <Grid.RowDefinitions>
@@ -31,10 +32,16 @@
                 <Button Content="Cut" Click="ButtonCut_Click"/>
             </StackPanel.Children>
         </StackPanel>
-        <Canvas Grid.Row="1" Width="1000" Height="768" Name="theCanvas" ClipToBounds="True" MouseMove="Content_MouseMove" MouseUp="Content_MouseUp">
+        <Canvas Grid.Row="1" Width="1000" Height="768" Name="theCanvas" ClipToBounds="True" MouseMove="Canvas_MouseMove" MouseLeave="Canvas_MouseLeave" MouseDown="Canvas_MouseDown" MouseUp="Canvas_MouseUp">
             <Rectangle Name="theImage"/>
             <Rectangle Name="theCursor" Stroke="Black" StrokeThickness="1"/>
-            <Rectangle Name="theCutArea" Stroke="Gray" StrokeThickness="1"/>
+            <Canvas Name="theCutAreaGroup">
+                <Rectangle Name="theCutAreaLeft"/>
+                <Rectangle Name="theCutAreaTop"/>
+                <Rectangle Name="theCutAreaRight"/>
+                <Rectangle Name="theCutAreaBottom"/>
+                <Rectangle Name="theCutArea"/>
+            </Canvas>
         </Canvas>
         <Border Grid.Row="2" Height="200" BorderBrush="Black" BorderThickness="1">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">

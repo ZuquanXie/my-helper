@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,9 +21,20 @@ namespace AutoScroll
     public partial class ScoreCutter : Window
     {
         private readonly string imagePath;
-        private bool cutting = false;
-        private bool dragging = false;
-        private BitmapImage sourceImage;
+        private readonly BitmapImage sourceImage;
+
+        private readonly Collection<UserOperation> operationLogs = new Collection<UserOperation>();
+
+        static readonly int CutAreaBorderSize = 2;
+        static readonly Brush CutAreaBorderFill = Brushes.Black;
+        private bool cutAreaDragging = false;
+        private bool cutAreaResizeLeft = false;
+        private bool cutAreaResizeRight = false;
+        private bool cutAreaResizeTop = false;
+        private bool cutAreaResizeBottom = false;
+        private Point cutAreaMoveOffset = new Point(0, 0);
+        private Point cutAreaMoveBeginPosition = new Point(0, 0);
+        private Point cutAreaResizeBeginPosition = new Point(0, 0);
 
         public ScoreCutter()
         {
@@ -40,7 +52,11 @@ namespace AutoScroll
         private void WindowLoaded(object sender, RoutedEventArgs e)
         {
             InitImage();
-            InitCursor();
+            InitCutArea();
+        }
+
+        private void WindowMouseLeave(object sender, MouseEventArgs e)
+        {
         }
 
         private void InitImage()
@@ -55,45 +71,148 @@ namespace AutoScroll
                 Drawing = imageDrawing
             };
             drawingBrush.Stretch = Stretch.None;
-            Canvas.SetTop(theImage, 0);
-            Canvas.SetLeft(theImage, 0);
             theImage.Width = sourceImage.PixelWidth;
             theImage.Height = sourceImage.PixelHeight;
             theImage.Fill = drawingBrush;
+            Canvas.SetTop(theImage, 0);
+            Canvas.SetLeft(theImage, 0);
+            Canvas.SetZIndex(theImage, 0);
         }
 
-        private void InitCursor()
+        private void InitCutArea()
         {
-            theCursorWidth.Text = "100";
-            theCursorHeight.Text = "100";
-            theCursor.Width = 100;
-            theCursor.Height = 100;
-            Canvas.SetTop(theCursor, 0);
-            Canvas.SetLeft(theCursor, 0);
+            var initWidth = 100;
+            var initHeight = 100;
+            var groupWidth = CutAreaBorderSize * 2 + initWidth;
+            var groupHeight = CutAreaBorderSize * 2 + initHeight;
+
+            /// group
+            theCutAreaGroup.Width = groupWidth;
+            theCutAreaGroup.Height = groupHeight;
+            Canvas.SetZIndex(theCutAreaGroup, 2);
+            Canvas.SetLeft(theCutAreaGroup, 0);
+            Canvas.SetTop(theCutAreaGroup, 0);
+
+            /// area
+            theCutArea.Width = initWidth;
+            theCutArea.Height = initHeight;
+            theCutArea.Fill = Brushes.Transparent;
+            Canvas.SetLeft(theCutArea, CutAreaBorderSize);
+            Canvas.SetTop(theCutArea, CutAreaBorderSize);
+
+            /// left
+            theCutAreaLeft.Width = CutAreaBorderSize;
+            theCutAreaLeft.Height = groupHeight;
+            //theCutAreaLeft.Fill = CutAreaBorderFill;
+            theCutAreaLeft.Fill = Brushes.Red;
+            Canvas.SetLeft(theCutAreaLeft, 0);
+            Canvas.SetTop(theCutAreaLeft, 0);
+
+            /// top
+            theCutAreaTop.Width = initWidth;
+            theCutAreaTop.Height = CutAreaBorderSize;
+            //theCutAreaTop.Fill = CutAreaBorderFill;
+            theCutAreaTop.Fill = Brushes.Green;
+            Canvas.SetLeft(theCutAreaTop, CutAreaBorderSize);
+            Canvas.SetTop(theCutAreaTop, 0);
+
+            /// right
+            theCutAreaRight.Width = CutAreaBorderSize;
+            theCutAreaRight.Height = groupHeight;
+            //theCutAreaRight.Fill = CutAreaBorderFill;
+            theCutAreaRight.Fill = Brushes.Red;
+            Canvas.SetRight(theCutAreaRight, 0);
+            Canvas.SetTop(theCutAreaRight, 0);
+
+            /// bottom
+            theCutAreaBottom.Width = initWidth;
+            theCutAreaBottom.Height = CutAreaBorderSize;
+            //theCutAreaBottom.Fill = CutAreaBorderFill;
+            theCutAreaBottom.Fill = Brushes.Green;
+            Canvas.SetLeft(theCutAreaBottom, CutAreaBorderSize);
+            Canvas.SetBottom(theCutAreaBottom, 0);
         }
 
-        private void SetCursorPosition(Point position)
+        private void UpdatePositionCutArea(Point to)
         {
-            if (position.X < theCursor.Width / 2)
+            Canvas.SetLeft(theCutAreaGroup, to.X);
+            Canvas.SetTop(theCutAreaGroup, to.Y);
+        }
+
+        private void UpdatePositionCutArea(Point to, Point from)
+        {
+            operationLogs.Add(new UserOperation(UserOperationType.MoveCutArea, new Point(to.X, to.Y), new Point(from.X, from.Y)));
+            UpdatePositionCutArea(to);
+        }
+
+        private void UpdateSizeCutArea(Size to, Point positionTo)
+        {
+            UpdatePositionCutArea(positionTo);
+            theCutAreaGroup.Width = to.Width;
+            theCutAreaGroup.Height = to.Height;
+        }
+
+        private void DragMoveBeginCutArea(Point position)
+        {
+            cutAreaDragging = true;
+            cutAreaMoveOffset = position;
+            cutAreaMoveBeginPosition = new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup));
+        }
+
+        private void DragMoveCutArea(Point position)
+        {
+            var to = new Point();
+            var x = position.X - cutAreaMoveOffset.X;
+            var y = position.Y - cutAreaMoveOffset.Y;
+            if (x < 0)
             {
-                Canvas.SetLeft(theCursor, 0);
-            } else if (position.X > theCanvas.Width - theCursor.Width / 2)
+                to.X = 0;
+            } else if (x + theCutAreaGroup.Width > theCanvas.Width)
             {
-                Canvas.SetLeft(theCursor, theCanvas.Width - theCursor.Width);
+                to.X = theCanvas.Width - theCutAreaGroup.Width;
             } else
             {
-                Canvas.SetLeft(theCursor, position.X - theCursor.Width / 2);
+                to.X = x;
             }
-            if (position.Y < theCursor.Height / 2)
+            if (y < 0)
             {
-                Canvas.SetTop(theCursor, 0);
-            } else if (position.Y > theCanvas.Height - theCursor.Height / 2)
+                to.Y = 0;
+            } else if (y + theCutAreaGroup.Height > theCanvas.Height)
             {
-                Canvas.SetTop(theCursor, theCanvas.Height - theCursor.Height);
+                to.Y = theCanvas.Height - theCutAreaGroup.Height;
             } else
             {
-                Canvas.SetTop(theCursor, position.Y - theCursor.Height / 2);
+                to.Y = y;
             }
+            UpdatePositionCutArea(to);
+        }
+
+        private void DragMoveEndCutArea()
+        {
+            cutAreaDragging = false;
+            UpdatePositionCutArea(new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup)), cutAreaMoveBeginPosition);
+        }
+
+        private void DragResizeBeginCutArea(Rectangle handler, Point position)
+        {
+            cutAreaResizeLeft = handler == theCutAreaLeft;
+            cutAreaResizeRight = handler == theCutAreaRight;
+            cutAreaResizeTop = handler == theCutAreaTop;
+            cutAreaResizeBottom = handler == theCutAreaBottom;
+            cutAreaResizeBeginPoint = position;
+        }
+
+        private void DragResizeMoveCutArea()
+        {
+
+        }
+
+        private void DragResizeEndCutArea()
+        {
+            cutAreaResizeLeft = false;
+            cutAreaResizeRight = false;
+            cutAreaResizeTop = false;
+            cutAreaResizeBottom = false;
         }
 
         private void CreatePreview(Point position)
@@ -113,29 +232,67 @@ namespace AutoScroll
             thePreview.Children.Add(rectangle);
         }
 
-        private void Content_MouseMove(object sender, MouseEventArgs e)
-        {
-            SetCursorPosition(e.GetPosition(theCanvas));
-        }
-
-        private void Content_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            CreatePreview(e.GetPosition(theImage));
-        }
-
         private void ButtonCut_Click(object sender, RoutedEventArgs e)
         {
-            if (cutting)
-            {
-                cutting = false;
-                return;
-            }
             int.TryParse(theCursorWidth.Text, out int width);
             int.TryParse(theCursorHeight.Text, out int height);
             theCutArea.Width = width;
             theCutArea.Height = height;
-            cutting = true;
         }
 
+        private void Canvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (cutAreaDragging == true)
+            {
+                DragMoveCutArea(e.GetPosition(theImage));
+            }
+        }
+
+        private void Canvas_MouseLeave(object sender, MouseEventArgs e)
+        {
+        }
+
+        private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            /// drag move cutArea
+            if (e.Source == theCutArea)
+            {
+                DragMoveBeginCutArea(e.GetPosition(theCutAreaGroup));
+                return;
+            }
+
+            /// drag resize cutArea
+            if (e.Source == theCutAreaLeft || e.Source == theCutAreaRight || e.Source == theCutAreaTop || e.Source == theCutAreaBottom)
+            {
+                DragResizeBeginCutArea((Rectangle)e.Source, e.GetPosition(theCutAreaGroup));
+                return;
+            }
+        }
+
+        private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            DragMoveEndCutArea();
+            DragResizeEndCutArea();
+        }
+    }
+
+    public enum UserOperationType
+    {
+        MoveCutArea,
+        ResizeCutArea
+    }
+
+    public class UserOperation
+    {
+        public UserOperationType Type;
+        public Object From;
+        public Object To;
+
+        public UserOperation(UserOperationType type, object to, object from)
+        {
+            Type = type;
+            From = from;
+            To = to;
+        }
     }
 }
