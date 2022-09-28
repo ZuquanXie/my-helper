@@ -27,14 +27,19 @@ namespace AutoScroll
 
         static readonly int CutAreaBorderSize = 2;
         static readonly Brush CutAreaBorderFill = Brushes.Black;
-        private bool cutAreaDragging = false;
+
+        private bool cutAreaDrag = false;
+        private Point cutAreaDragOffset = new Point(0, 0);
+        private Point cutAreaDragBeginPosition = new Point(0, 0);
+
+        private int cutAreaResizeMoveThrottling = 0;
         private bool cutAreaResizeLeft = false;
         private bool cutAreaResizeRight = false;
         private bool cutAreaResizeTop = false;
         private bool cutAreaResizeBottom = false;
-        private Point cutAreaMoveOffset = new Point(0, 0);
-        private Point cutAreaMoveBeginPosition = new Point(0, 0);
+        private Point cutAreaResizeBeginPoint = new Point(0, 0);
         private Point cutAreaResizeBeginPosition = new Point(0, 0);
+        private Size cutAreaResizeBeginSize = new Size(0, 0);
 
         public ScoreCutter()
         {
@@ -150,20 +155,30 @@ namespace AutoScroll
             UpdatePositionCutArea(positionTo);
             theCutAreaGroup.Width = to.Width;
             theCutAreaGroup.Height = to.Height;
+
+            theCutArea.Width = theCutAreaTop.Width = theCutAreaBottom.Width = to.Width - CutAreaBorderSize * 2;
+            theCutArea.Height = to.Height - CutAreaBorderSize * 2;
+            theCutAreaLeft.Height = theCutAreaRight.Height = to.Height;
+        }
+
+        private void UpdateSizeCutArea(Size to, Point positionTo, Size from, Point positionFrom)
+        {
+            operationLogs.Add(new UserOperation(UserOperationType.ResizeCutArea, new DragResize(to, positionTo), new DragResize(from, positionFrom)));
+            UpdateSizeCutArea(to, positionTo);
         }
 
         private void DragMoveBeginCutArea(Point position)
         {
-            cutAreaDragging = true;
-            cutAreaMoveOffset = position;
-            cutAreaMoveBeginPosition = new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup));
+            cutAreaDrag = true;
+            cutAreaDragOffset = position;
+            cutAreaDragBeginPosition = new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup));
         }
 
         private void DragMoveCutArea(Point position)
         {
             var to = new Point();
-            var x = position.X - cutAreaMoveOffset.X;
-            var y = position.Y - cutAreaMoveOffset.Y;
+            var x = position.X - cutAreaDragOffset.X;
+            var y = position.Y - cutAreaDragOffset.Y;
             if (x < 0)
             {
                 to.X = 0;
@@ -189,8 +204,46 @@ namespace AutoScroll
 
         private void DragMoveEndCutArea()
         {
-            cutAreaDragging = false;
-            UpdatePositionCutArea(new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup)), cutAreaMoveBeginPosition);
+            cutAreaDrag = false;
+            UpdatePositionCutArea(new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup)), cutAreaDragBeginPosition);
+        }
+
+        private void DragResizeCutArea(Point position, bool needLog = false)
+        {
+            double xChanged = 0;
+            double yChanged = 0;
+            double widthChanged = 0;
+            double heightChanged = 0;
+            if (cutAreaResizeLeft)
+            {
+                widthChanged = cutAreaResizeBeginPoint.X - position.X;
+                xChanged = -widthChanged;
+            } else if (cutAreaResizeRight)
+            {
+                widthChanged = position.X - cutAreaResizeBeginPoint.X;
+            } else if (cutAreaResizeTop)
+            {
+                heightChanged = cutAreaResizeBeginPoint.Y - position.Y;
+                yChanged = -heightChanged;
+            } else
+            {
+                heightChanged = position.Y - cutAreaResizeBeginPoint.Y;
+            }
+            if (needLog)
+            {
+                UpdateSizeCutArea(
+                    new Size(cutAreaResizeBeginSize.Width + widthChanged, cutAreaResizeBeginSize.Height + heightChanged),
+                    new Point(cutAreaResizeBeginPosition.X + xChanged, cutAreaResizeBeginPosition.Y + yChanged),
+                    cutAreaResizeBeginSize,
+                    cutAreaResizeBeginPosition
+                    );
+            } else
+            {
+                UpdateSizeCutArea(
+                    new Size(cutAreaResizeBeginSize.Width + widthChanged, cutAreaResizeBeginSize.Height + heightChanged),
+                    new Point(cutAreaResizeBeginPosition.X + xChanged, cutAreaResizeBeginPosition.Y + yChanged)
+                    );
+            }
         }
 
         private void DragResizeBeginCutArea(Rectangle handler, Point position)
@@ -200,33 +253,40 @@ namespace AutoScroll
             cutAreaResizeTop = handler == theCutAreaTop;
             cutAreaResizeBottom = handler == theCutAreaBottom;
             cutAreaResizeBeginPoint = position;
+            cutAreaResizeBeginPosition = new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup));
+            cutAreaResizeBeginSize = new Size(theCutAreaGroup.Width, theCutAreaGroup.Height);
         }
 
-        private void DragResizeMoveCutArea()
+        /// todo: change the element's property will create wrong result when drag move
+        private void DragResizeMoveCutArea(MouseEventArgs e)
         {
-
+            if (cutAreaResizeMoveThrottling < 5)
+            {
+                cutAreaResizeMoveThrottling += 1;
+                return;
+            }
+            DragResizeCutArea(e.GetPosition(theCutAreaGroup));
+            cutAreaResizeMoveThrottling = 0;
         }
 
-        private void DragResizeEndCutArea()
+        private void DragResizeEndCutArea(MouseEventArgs e)
         {
-            cutAreaResizeLeft = false;
-            cutAreaResizeRight = false;
-            cutAreaResizeTop = false;
-            cutAreaResizeBottom = false;
+            DragResizeCutArea(e.GetPosition(theCutAreaGroup), true);
+            cutAreaResizeLeft = cutAreaResizeRight = cutAreaResizeTop = cutAreaResizeBottom = false;
         }
 
-        private void CreatePreview(Point position)
+        private void CreatePreview(Point position, Size size)
         {
             var visual = new VisualBrush
             {
                 ViewboxUnits = BrushMappingMode.Absolute,
-                Viewbox = new Rect(position.X - theCursor.Width / 2, position.Y - theCursor.Height / 2, theCursor.Width, theCursor.Height),
+                Viewbox = new Rect(position.X, position.Y, size.Width, size.Height),
                 Visual = theImage
             };
             var rectangle = new Rectangle
             {
-                Width = theCursor.Width,
-                Height = theCursor.Height,
+                Width = size.Width,
+                Height = size.Height,
                 Fill = visual
             };
             thePreview.Children.Add(rectangle);
@@ -234,22 +294,33 @@ namespace AutoScroll
 
         private void ButtonCut_Click(object sender, RoutedEventArgs e)
         {
-            int.TryParse(theCursorWidth.Text, out int width);
-            int.TryParse(theCursorHeight.Text, out int height);
-            theCutArea.Width = width;
-            theCutArea.Height = height;
+            CreatePreview(new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup)), new Size(theCutAreaGroup.Width, theCutAreaGroup.Height));
         }
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (cutAreaDragging == true)
+            if (cutAreaDrag == true)
             {
                 DragMoveCutArea(e.GetPosition(theImage));
+                return;
+            }
+            if (cutAreaResizeLeft || cutAreaResizeRight || cutAreaResizeTop || cutAreaResizeBottom) {
+                DragResizeMoveCutArea(e);
+                return;
             }
         }
 
         private void Canvas_MouseLeave(object sender, MouseEventArgs e)
         {
+            if (cutAreaDrag)
+            {
+                DragMoveEndCutArea();
+                return;
+            }
+            if (cutAreaResizeLeft || cutAreaResizeRight || cutAreaResizeTop || cutAreaResizeBottom) {
+                DragResizeEndCutArea(e);
+                return;
+            }
         }
 
         private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
@@ -271,8 +342,15 @@ namespace AutoScroll
 
         private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            DragMoveEndCutArea();
-            DragResizeEndCutArea();
+            if (cutAreaDrag)
+            {
+                DragMoveEndCutArea();
+                return;
+            }
+            if (cutAreaResizeLeft || cutAreaResizeRight || cutAreaResizeTop || cutAreaResizeBottom) {
+                DragResizeEndCutArea(e);
+                return;
+            }
         }
     }
 
@@ -280,6 +358,22 @@ namespace AutoScroll
     {
         MoveCutArea,
         ResizeCutArea
+    }
+
+    public class DragResize
+    {
+        public Size Size;
+        public Point Position;
+        public DragResize(Size size, Point position)
+        {
+            Size = size;
+            Position = position;
+        }
+
+        override
+        public string ToString() {
+            return "Size: " + Size.ToString() + " Position: " + Position.ToString();
+        }
     }
 
     public class UserOperation
@@ -293,6 +387,11 @@ namespace AutoScroll
             Type = type;
             From = from;
             To = to;
+        }
+        override
+        public string ToString()
+        {
+            return "(From: " + From.ToString() + ") To: " + To.ToString();
         }
     }
 }
