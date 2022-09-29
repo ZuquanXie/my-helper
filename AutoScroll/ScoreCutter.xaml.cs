@@ -32,7 +32,6 @@ namespace AutoScroll
         private Point cutAreaDragOffset = new Point(0, 0);
         private Point cutAreaDragBeginPosition = new Point(0, 0);
 
-        private int cutAreaResizeMoveThrottling = 0;
         private bool cutAreaResizeLeft = false;
         private bool cutAreaResizeRight = false;
         private bool cutAreaResizeTop = false;
@@ -152,17 +151,27 @@ namespace AutoScroll
 
         private void UpdateSizeCutArea(Size to, Point positionTo)
         {
-            UpdatePositionCutArea(positionTo);
-            theCutAreaGroup.Width = to.Width;
-            theCutAreaGroup.Height = to.Height;
+            var width = Math.Max(CutAreaBorderSize * 2, to.Width);
+            var height = Math.Max(CutAreaBorderSize * 2, to.Height);
 
-            theCutArea.Width = theCutAreaTop.Width = theCutAreaBottom.Width = to.Width - CutAreaBorderSize * 2;
-            theCutArea.Height = to.Height - CutAreaBorderSize * 2;
-            theCutAreaLeft.Height = theCutAreaRight.Height = to.Height;
+            UpdatePositionCutArea(positionTo);
+            theCutAreaGroup.Width = width;
+            theCutAreaGroup.Height = height;
+
+            theCutArea.Width = theCutAreaTop.Width = theCutAreaBottom.Width = width - CutAreaBorderSize * 2;
+            theCutArea.Height = height - CutAreaBorderSize * 2;
+            theCutAreaLeft.Height = theCutAreaRight.Height = height;
+
+            theCutAreaWidthInput.Text = theCutArea.Width.ToString();
+            theCutAreaHeightInput.Text = theCutArea.Height.ToString();
         }
 
         private void UpdateSizeCutArea(Size to, Point positionTo, Size from, Point positionFrom)
         {
+            if (to.Width == from.Width && to.Height == from.Height)
+            {
+                return;
+            }
             operationLogs.Add(new UserOperation(UserOperationType.ResizeCutArea, new DragResize(to, positionTo), new DragResize(from, positionFrom)));
             UpdateSizeCutArea(to, positionTo);
         }
@@ -229,19 +238,34 @@ namespace AutoScroll
             {
                 heightChanged = position.Y - cutAreaResizeBeginPoint.Y;
             }
+
+            var width = cutAreaResizeBeginSize.Width + widthChanged;
+            var height = cutAreaResizeBeginSize.Height + heightChanged;
+            var x = cutAreaResizeBeginPosition.X + xChanged;
+            var y = cutAreaResizeBeginPosition.Y + yChanged;
+
+            if (width < CutAreaBorderSize * 2)
+            {
+                width = CutAreaBorderSize * 2;
+            }
+            if (height < CutAreaBorderSize * 2)
+            {
+                height = CutAreaBorderSize * 2;
+            }
+
             if (needLog)
             {
                 UpdateSizeCutArea(
-                    new Size(cutAreaResizeBeginSize.Width + widthChanged, cutAreaResizeBeginSize.Height + heightChanged),
-                    new Point(cutAreaResizeBeginPosition.X + xChanged, cutAreaResizeBeginPosition.Y + yChanged),
+                    new Size(width, height),
+                    new Point(x, y),
                     cutAreaResizeBeginSize,
                     cutAreaResizeBeginPosition
                     );
             } else
             {
                 UpdateSizeCutArea(
-                    new Size(cutAreaResizeBeginSize.Width + widthChanged, cutAreaResizeBeginSize.Height + heightChanged),
-                    new Point(cutAreaResizeBeginPosition.X + xChanged, cutAreaResizeBeginPosition.Y + yChanged)
+                    new Size(width, height),
+                    new Point(x, y)
                     );
             }
         }
@@ -257,21 +281,14 @@ namespace AutoScroll
             cutAreaResizeBeginSize = new Size(theCutAreaGroup.Width, theCutAreaGroup.Height);
         }
 
-        /// todo: change the element's property will create wrong result when drag move
-        private void DragResizeMoveCutArea(MouseEventArgs e)
+        private void DragResizeMoveCutArea(Point position)
         {
-            if (cutAreaResizeMoveThrottling < 5)
-            {
-                cutAreaResizeMoveThrottling += 1;
-                return;
-            }
-            DragResizeCutArea(e.GetPosition(theCutAreaGroup));
-            cutAreaResizeMoveThrottling = 0;
+            DragResizeCutArea(position);
         }
 
-        private void DragResizeEndCutArea(MouseEventArgs e)
+        private void DragResizeEndCutArea(Point position)
         {
-            DragResizeCutArea(e.GetPosition(theCutAreaGroup), true);
+            DragResizeCutArea(position, true);
             cutAreaResizeLeft = cutAreaResizeRight = cutAreaResizeTop = cutAreaResizeBottom = false;
         }
 
@@ -294,7 +311,10 @@ namespace AutoScroll
 
         private void ButtonCut_Click(object sender, RoutedEventArgs e)
         {
-            CreatePreview(new Point(Canvas.GetLeft(theCutAreaGroup), Canvas.GetTop(theCutAreaGroup)), new Size(theCutAreaGroup.Width, theCutAreaGroup.Height));
+            CreatePreview(
+                new Point(Canvas.GetLeft(theCutAreaGroup) + CutAreaBorderSize, Canvas.GetTop(theCutAreaGroup) + CutAreaBorderSize),
+                new Size(theCutArea.Width, theCutArea.Height)
+                );
         }
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
@@ -305,7 +325,7 @@ namespace AutoScroll
                 return;
             }
             if (cutAreaResizeLeft || cutAreaResizeRight || cutAreaResizeTop || cutAreaResizeBottom) {
-                DragResizeMoveCutArea(e);
+                DragResizeMoveCutArea(e.GetPosition(theImage));
                 return;
             }
         }
@@ -318,7 +338,7 @@ namespace AutoScroll
                 return;
             }
             if (cutAreaResizeLeft || cutAreaResizeRight || cutAreaResizeTop || cutAreaResizeBottom) {
-                DragResizeEndCutArea(e);
+                DragResizeEndCutArea(e.GetPosition(theImage));
                 return;
             }
         }
@@ -335,7 +355,7 @@ namespace AutoScroll
             /// drag resize cutArea
             if (e.Source == theCutAreaLeft || e.Source == theCutAreaRight || e.Source == theCutAreaTop || e.Source == theCutAreaBottom)
             {
-                DragResizeBeginCutArea((Rectangle)e.Source, e.GetPosition(theCutAreaGroup));
+                DragResizeBeginCutArea((Rectangle)e.Source, e.GetPosition(theImage));
                 return;
             }
         }
@@ -348,7 +368,7 @@ namespace AutoScroll
                 return;
             }
             if (cutAreaResizeLeft || cutAreaResizeRight || cutAreaResizeTop || cutAreaResizeBottom) {
-                DragResizeEndCutArea(e);
+                DragResizeEndCutArea(e.GetPosition(theImage));
                 return;
             }
         }

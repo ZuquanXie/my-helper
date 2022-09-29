@@ -24,10 +24,10 @@
                 <TextBox Width="48" Name="theBarHeight"/>
 
                 <TextBlock Text="CW:"/>
-                <TextBox Width="48" Name="theCursorWidth"/>
+                <TextBox Width="48" Name="theCutAreaWidthInput"/>
 
                 <TextBlock Text="CH:"/>
-                <TextBox Width="48" Name="theCursorHeight"/>
+                <TextBox Width="48" Name="theCutAreaHeightInput"/>
 
                 <Button Content="Cut" Click="ButtonCut_Click"/>
             </StackPanel.Children>
